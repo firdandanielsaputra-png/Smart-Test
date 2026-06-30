@@ -3,21 +3,51 @@
 namespace App\Http\Controllers;
 
 use App\Models\Result;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ResultController extends Controller
 {
+    /**
+     * Menampilkan semua hasil quiz milik user
+     */
     public function index()
     {
-        $results = Result::latest()->get();
+        $results = Result::where('user_id', Auth::id())
+                        ->with('subject')
+                        ->latest()
+                        ->get();
 
         return view('HasilQuiz', compact('results'));
     }
 
-    public function store(Request $request)
+    /**
+     * Menampilkan detail hasil quiz
+     */
+    public function show($id)
     {
-        Result::create($request->all());
+        $result = Result::with('subject')
+                        ->where('user_id', Auth::id())
+                        ->findOrFail($id);
 
-        return redirect('/hasil');
+        return response()->json([
+            'success' => true,
+            'data' => $result
+        ]);
+    }
+
+    /**
+     * Menghapus hasil quiz
+     */
+    public function destroy($id)
+    {
+        $result = Result::where('user_id', Auth::id())
+                        ->findOrFail($id);
+
+        $result->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Hasil quiz berhasil dihapus'
+        ]);
     }
 }
