@@ -16,7 +16,7 @@ class QuizController extends Controller
     {
         $questions = Question::where('subject_id', $subjectId)->get();
 
-        return response()->json($questions);
+        return view('quiz', compact('questions', 'subjectId'));
     }
 
     /**
