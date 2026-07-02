@@ -3,9 +3,7 @@
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SubjectController;
-use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\ResultController;
 use App\Http\Controllers\ProgressController;
@@ -19,93 +17,74 @@ use App\Http\Controllers\RecommendationController;
 
 /*
 |--------------------------------------------------------------------------
-| AUTH
+| Login
 |--------------------------------------------------------------------------
 */
 
 Route::get('/', [AuthController::class, 'index'])->name('login');
 
-Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
+Route::post('/login', [AuthController::class, 'login'])->name('login.process');
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 
 /*
 |--------------------------------------------------------------------------
-| DASHBOARD
+| Mata Kuliah
 |--------------------------------------------------------------------------
 */
 
-Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+Route::get('/matakuliah', [SubjectController::class, 'index'])
+    ->name('matakuliah');
+
+Route::get('/matakuliah/{id}', [SubjectController::class, 'show'])
+    ->name('subject.show');
 
 
 /*
 |--------------------------------------------------------------------------
-| SUBJECT
+| Quiz
 |--------------------------------------------------------------------------
 */
 
-Route::get('/subjects', [SubjectController::class, 'index'])->name('subjects');
+Route::get('/quiz/{subjectId}', [QuizController::class, 'getQuestions'])
+    ->name('quiz');
 
-Route::get('/subjects/{id}', [SubjectController::class, 'show'])->name('subjects.show');
+Route::post('/submit-quiz', [QuizController::class, 'submitQuiz'])
+    ->name('submit.quiz');
 
 
 /*
 |--------------------------------------------------------------------------
-| QUESTION (CRUD)
+| Hasil Quiz
 |--------------------------------------------------------------------------
 */
 
-Route::get('/questions', [QuestionController::class, 'index']);
+Route::get('/hasil-quiz', [QuizController::class, 'hasilQuiz'])
+    ->name('hasil.quiz');
 
-Route::post('/questions', [QuestionController::class, 'store']);
+Route::get('/hasil-quiz/all', [ResultController::class, 'index'])
+    ->name('result.index');
 
-Route::get('/questions/{id}', [QuestionController::class, 'show']);
-
-Route::put('/questions/{id}', [QuestionController::class, 'update']);
-
-Route::delete('/questions/{id}', [QuestionController::class, 'destroy']);
+Route::delete('/hasil-quiz/{id}', [ResultController::class, 'destroy'])
+    ->name('result.delete');
 
 
 /*
 |--------------------------------------------------------------------------
-| QUIZ
+| Progress
 |--------------------------------------------------------------------------
 */
 
-Route::get('/quiz/{subjectId}', [QuizController::class, 'getQuestions']);
-
-Route::post('/quiz/submit', [QuizController::class, 'submitQuiz']);
-
-Route::get('/hasil-quiz', [QuizController::class, 'hasilQuiz'])->name('hasil.quiz');
+Route::get('/progress', [ProgressController::class, 'index'])
+    ->name('progress');
 
 
 /*
 |--------------------------------------------------------------------------
-| RESULT
+| Recommendation
 |--------------------------------------------------------------------------
 */
 
-Route::get('/results', [ResultController::class, 'index']);
-
-Route::get('/results/{id}', [ResultController::class, 'show']);
-
-Route::delete('/results/{id}', [ResultController::class, 'destroy']);
-
-
-/*
-|--------------------------------------------------------------------------
-| PROGRESS
-|--------------------------------------------------------------------------
-*/
-
-Route::get('/progress', [ProgressController::class, 'index'])->name('progress');
-
-
-/*
-|--------------------------------------------------------------------------
-| RECOMMENDATION
-|--------------------------------------------------------------------------
-*/
-
-Route::get('/recommendation', [RecommendationController::class, 'index'])->name('recommendation');
+Route::get('/recommendation', [RecommendationController::class, 'index'])
+    ->name('recommendation');
