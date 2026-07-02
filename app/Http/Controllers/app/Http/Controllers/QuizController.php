@@ -85,23 +85,8 @@ class QuizController extends Controller
 
         ]);
 
-        return response()->json([
-
-            'success' => true,
-
-            'message' => 'Quiz berhasil diselesaikan',
-
-            'score' => $score,
-
-            'correct' => $correct,
-
-            'wrong' => $wrong,
-
-            'level' => $level,
-
-            'result' => $result
-
-        ]);
+        return redirect()->route('hasil.quiz')
+                 ->with('success', 'Quiz berhasil diselesaikan.');
     }
 
     /**
