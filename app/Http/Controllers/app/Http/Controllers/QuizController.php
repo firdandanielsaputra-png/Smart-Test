@@ -6,14 +6,20 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Question;
 use App\Models\Result;
+use App\Models\Progress;
+use App\Models\Recommendation;
 
 class QuizController extends Controller
 {
     /**
-     * Mengambil soal berdasarkan mata kuliah
+     * Menampilkan soal berdasarkan mata kuliah
      */
     public function getQuestions($subjectId)
     {
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
+
         $questions = Question::where('subject_id', $subjectId)->get();
 
         return view('quiz', compact('questions', 'subjectId'));
@@ -24,9 +30,14 @@ class QuizController extends Controller
      */
     public function submitQuiz(Request $request)
     {
+        // Pastikan user login
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
+
         $request->validate([
-            'subject_id' => 'required|integer',
-            'answers' => 'required|array'
+            'subject_id' => 'required|integer|exists:subjects,id',
+            'answers'    => 'required|array'
         ]);
 
         $score = 0;
@@ -53,48 +64,114 @@ class QuizController extends Controller
             }
         }
 
-        // Menentukan level
+        /*
+        |--------------------------------------------------------------------------
+        | Menentukan Level
+        |--------------------------------------------------------------------------
+        */
+
         if ($score >= 90) {
 
-            $level = "Advanced";
+            $level = 'Advanced';
 
         } elseif ($score >= 70) {
 
-            $level = "Intermediate";
+            $level = 'Intermediate';
 
         } else {
 
-            $level = "Beginner";
+            $level = 'Beginner';
 
         }
 
-        // Simpan hasil quiz
-        $result = Result::create([
+        /*
+        |--------------------------------------------------------------------------
+        | Simpan Result
+        |--------------------------------------------------------------------------
+        */
 
-            'user_id' => Auth::id(),
+        Result::create([
+
+            'user_id'    => Auth::id(),
 
             'subject_id' => $request->subject_id,
 
-            'score' => $score,
+            'score'      => $score,
 
-            'correct' => $correct,
+            'correct'    => $correct,
 
-            'wrong' => $wrong,
+            'wrong'      => $wrong,
 
-            'status' => $level
+            'status'     => $level
 
         ]);
 
+        /*
+        |--------------------------------------------------------------------------
+        | Update Progress
+        |--------------------------------------------------------------------------
+        */
+
+        $quizTotal = Result::where('user_id', Auth::id())->count();
+
+        $averageScore = Result::where('user_id', Auth::id())->avg('score');
+
+        Progress::updateOrCreate(
+
+            [
+                'user_id' => Auth::id()
+            ],
+
+            [
+                'quiz_total'    => $quizTotal,
+
+                'average_score' => round($averageScore, 2),
+
+                'level'         => $level
+            ]
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Recommendation
+        |--------------------------------------------------------------------------
+        */
+
+        if ($score < 70) {
+
+            Recommendation::create([
+
+                'user_id'       => Auth::id(),
+
+                'subject_id'    => $request->subject_id,
+
+                'recommendation' => 'Pelajari kembali materi pada mata kuliah ini sebelum melanjutkan ke level berikutnya.'
+
+            ]);
+
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Redirect ke halaman hasil
+        |--------------------------------------------------------------------------
+        */
+
         return redirect()->route('hasil.quiz')
-                 ->with('success', 'Quiz berhasil diselesaikan.');
+                         ->with('success', 'Quiz berhasil diselesaikan.');
     }
 
     /**
-     * Menampilkan hasil quiz terakhir user
+     * Menampilkan hasil quiz terakhir
      */
     public function hasilQuiz()
     {
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
+
         $result = Result::where('user_id', Auth::id())
+                        ->with('subject')
                         ->latest()
                         ->first();
 
