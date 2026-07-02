@@ -160,21 +160,3 @@ class QuizController extends Controller
         return redirect()->route('hasil.quiz')
                          ->with('success', 'Quiz berhasil diselesaikan.');
     }
-
-    /**
-     * Menampilkan hasil quiz terakhir
-     */
-    public function hasilQuiz()
-    {
-        if (!Auth::check()) {
-            return redirect()->route('login');
-        }
-
-        $result = Result::where('user_id', Auth::id())
-                        ->with('subject')
-                        ->latest()
-                        ->first();
-
-        return view('HasilQuiz', compact('result'));
-    }
-}
