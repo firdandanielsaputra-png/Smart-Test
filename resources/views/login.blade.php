@@ -8,15 +8,44 @@
 
 <div class="container">
     <div class="card">
+
         <h1>SMART TEST</h1>
         <p>Login Mahasiswa</p>
 
-        <input type="text" placeholder="NIM">
-        <input type="password" placeholder="Password">
+        @if(session('error'))
+            <p style="color:red;">
+                {{ session('error') }}
+            </p>
+        @endif
 
-        <button>LOGIN</button>
+        <form action="{{ route('login.process') }}" method="POST">
 
-        <a href="#">Belum punya akun?</a>
+            @csrf
+
+            <input
+                type="email"
+                name="email"
+                placeholder="Email"
+                required
+            >
+
+            <input
+                type="password"
+                name="password"
+                placeholder="Password"
+                required
+            >
+
+            <button type="submit">
+                LOGIN
+            </button>
+
+        </form>
+
+        <a href="#">
+            Belum punya akun?
+        </a>
+
     </div>
 </div>
 
