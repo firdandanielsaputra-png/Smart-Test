@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Auth;
 use App\Models\Result;
 use App\Models\Progress;
-use Illuminate\Support\Facades\Auth;
 
 class ProgressController extends Controller
 {
@@ -13,41 +13,64 @@ class ProgressController extends Controller
      */
     public function index()
     {
+        // Pastikan user sudah login
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
+
+        // Ambil seluruh hasil quiz user
         $results = Result::where('user_id', Auth::id())->get();
 
         $quizTotal = $results->count();
 
-        $average = $quizTotal > 0
+        $averageScore = $quizTotal > 0
             ? round($results->avg('score'), 2)
             : 0;
 
-        if ($average >= 90) {
+        /*
+        |--------------------------------------------------------------------------
+        | Menentukan Level
+        |--------------------------------------------------------------------------
+        */
 
-            $level = "Advanced";
+        if ($averageScore >= 90) {
 
-        } elseif ($average >= 70) {
+            $level = 'Advanced';
 
-            $level = "Intermediate";
+        } elseif ($averageScore >= 70) {
+
+            $level = 'Intermediate';
 
         } else {
 
-            $level = "Beginner";
+            $level = 'Beginner';
 
         }
 
-        Progress::updateOrCreate(
+        /*
+        |--------------------------------------------------------------------------
+        | Update Progress
+        |--------------------------------------------------------------------------
+        */
 
-            ['user_id' => Auth::id()],
+        $progress = Progress::updateOrCreate(
 
             [
-                'quiz_total' => $quizTotal,
-                'average_score' => $average,
-                'level' => $level
-            ]
+                'user_id' => Auth::id()
+            ],
 
+            [
+                'quiz_total'    => $quizTotal,
+                'average_score' => $averageScore,
+                'level'         => $level
+            ]
         );
 
-        $progress = Progress::where('user_id', Auth::id())->first();
+        /*
+        |--------------------------------------------------------------------------
+        | Tampilkan Progress
+        |--------------------------------------------------------------------------
+        */
 
         return view('Progress', compact('progress'));
     }
