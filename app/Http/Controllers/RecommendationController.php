@@ -2,62 +2,89 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Auth;
 use App\Models\Progress;
 use App\Models\Recommendation;
-use Illuminate\Support\Facades\Auth;
 
 class RecommendationController extends Controller
 {
     /**
-     * Menampilkan rekomendasi belajar
+     * Menampilkan rekomendasi belajar user
      */
     public function index()
     {
+        // Pastikan user sudah login
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Ambil Progress User
+        |--------------------------------------------------------------------------
+        */
+
         $progress = Progress::where('user_id', Auth::id())->first();
 
         if (!$progress) {
 
-            return response()->json([
-                'message' => 'Belum ada progress belajar.'
-            ]);
+            return redirect()->route('progress')
+                             ->with('error', 'Belum ada progress belajar.');
 
         }
 
-        $recommendation = "";
+        /*
+        |--------------------------------------------------------------------------
+        | Tentukan Rekomendasi
+        |--------------------------------------------------------------------------
+        */
 
         switch ($progress->level) {
 
-            case "Advanced":
-                $recommendation = "Pertahankan hasil belajar dan coba soal tingkat lanjutan.";
+            case 'Advanced':
+
+                $text = 'Pertahankan hasil belajar Anda dan coba kerjakan soal dengan tingkat kesulitan yang lebih tinggi.';
                 break;
 
-            case "Intermediate":
-                $recommendation = "Pelajari kembali materi yang masih belum dipahami dan kerjakan latihan tambahan.";
+            case 'Intermediate':
+
+                $text = 'Pelajari kembali materi yang belum dikuasai dan kerjakan latihan tambahan agar nilai meningkat.';
                 break;
 
             default:
-                $recommendation = "Disarankan mengulang materi dasar sebelum mengerjakan quiz berikutnya.";
+
+                $text = 'Disarankan mengulang materi dasar sebelum mengerjakan quiz berikutnya.';
                 break;
         }
 
-        Recommendation::updateOrCreate(
+        /*
+        |--------------------------------------------------------------------------
+        | Simpan / Update Recommendation
+        |--------------------------------------------------------------------------
+        */
+
+        $recommendation = Recommendation::updateOrCreate(
 
             [
-                'user_id' => Auth::id()
+                'user_id' => Auth::id(),
+
+                // sementara menggunakan subject_id = 1
+                // nanti bisa diganti sesuai mata kuliah terakhir
+                'subject_id' => 1
             ],
 
             [
-                'subject_id' => 1,
-                'recommendation' => $recommendation
+                'recommendation' => $text
             ]
 
         );
 
-        $recommendation = Recommendation::where('user_id', Auth::id())->latest()->first();
+        /*
+        |--------------------------------------------------------------------------
+        | Tampilkan Halaman Recommendation
+        |--------------------------------------------------------------------------
+        */
 
-        return response()->json([
-            'success' => true,
-            'data' => $recommendation
-        ]);
+        return view('Recommendation', compact('recommendation', 'progress'));
     }
 }
