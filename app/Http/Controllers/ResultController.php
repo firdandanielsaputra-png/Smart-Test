@@ -2,18 +2,22 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Result;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Result;
 
 class ResultController extends Controller
 {
     /**
-     * Menampilkan semua hasil quiz milik user
+     * Menampilkan semua hasil quiz user
      */
     public function index()
     {
-        $results = Result::where('user_id', Auth::id())
-                        ->with('subject')
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
+
+        $results = Result::with('subject')
+                        ->where('user_id', Auth::id())
                         ->latest()
                         ->get();
 
@@ -25,14 +29,15 @@ class ResultController extends Controller
      */
     public function show($id)
     {
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
+
         $result = Result::with('subject')
                         ->where('user_id', Auth::id())
                         ->findOrFail($id);
 
-        return response()->json([
-            'success' => true,
-            'data' => $result
-        ]);
+        return view('HasilQuiz', compact('result'));
     }
 
     /**
@@ -40,14 +45,16 @@ class ResultController extends Controller
      */
     public function destroy($id)
     {
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
+
         $result = Result::where('user_id', Auth::id())
                         ->findOrFail($id);
 
         $result->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Hasil quiz berhasil dihapus'
-        ]);
+        return redirect()->route('hasil.quiz')
+                         ->with('success', 'Hasil quiz berhasil dihapus.');
     }
 }
