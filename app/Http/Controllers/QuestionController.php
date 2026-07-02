@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use App\Models\Question;
 use App\Models\Subject;
 
@@ -13,78 +14,84 @@ class QuestionController extends Controller
      */
     public function index()
     {
-        $questions = Question::with('subject')->get();
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
 
-        return response()->json([
-            'success' => true,
-            'data' => $questions
-        ]);
+        $questions = Question::with('subject')
+                    ->orderBy('subject_id')
+                    ->get();
+
+        return view('questions.index', compact('questions'));
     }
 
     /**
-     * Menampilkan form tambah soal
+     * Form tambah soal
      */
     public function create()
     {
-        $subjects = Subject::all();
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
 
-        return response()->json([
-            'subjects' => $subjects
-        ]);
+        $subjects = Subject::orderBy('nama')->get();
+
+        return view('questions.create', compact('subjects'));
     }
 
     /**
-     * Menyimpan soal baru
+     * Simpan soal
      */
     public function store(Request $request)
     {
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
+
         $request->validate([
-            'subject_id' => 'required',
-            'question' => 'required',
-            'option_a' => 'required',
-            'option_b' => 'required',
-            'option_c' => 'required',
-            'option_d' => 'required',
-            'correct_answer' => 'required'
+            'subject_id'     => 'required|exists:subjects,id',
+            'question'       => 'required',
+            'option_a'       => 'required',
+            'option_b'       => 'required',
+            'option_c'       => 'required',
+            'option_d'       => 'required',
+            'correct_answer' => 'required|in:A,B,C,D'
         ]);
 
-        $question = Question::create([
+        Question::create([
 
-            'subject_id' => $request->subject_id,
+            'subject_id'     => $request->subject_id,
 
-            'question' => $request->question,
+            'question'       => $request->question,
 
-            'option_a' => $request->option_a,
+            'option_a'       => $request->option_a,
 
-            'option_b' => $request->option_b,
+            'option_b'       => $request->option_b,
 
-            'option_c' => $request->option_c,
+            'option_c'       => $request->option_c,
 
-            'option_d' => $request->option_d,
+            'option_d'       => $request->option_d,
 
             'correct_answer' => strtoupper($request->correct_answer)
 
         ]);
 
-        return response()->json([
-
-            'success' => true,
-
-            'message' => 'Soal berhasil ditambahkan',
-
-            'data' => $question
-
-        ]);
+        return redirect()->back()
+                         ->with('success', 'Soal berhasil ditambahkan.');
     }
 
     /**
-     * Menampilkan detail soal
+     * Detail soal
      */
     public function show($id)
     {
-        $question = Question::findOrFail($id);
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
 
-        return response()->json($question);
+        $question = Question::with('subject')->findOrFail($id);
+
+        return view('questions.show', compact('question'));
     }
 
     /**
@@ -92,35 +99,42 @@ class QuestionController extends Controller
      */
     public function update(Request $request, $id)
     {
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
+
+        $request->validate([
+            'subject_id'     => 'required|exists:subjects,id',
+            'question'       => 'required',
+            'option_a'       => 'required',
+            'option_b'       => 'required',
+            'option_c'       => 'required',
+            'option_d'       => 'required',
+            'correct_answer' => 'required|in:A,B,C,D'
+        ]);
+
         $question = Question::findOrFail($id);
 
         $question->update([
 
-            'subject_id' => $request->subject_id,
+            'subject_id'     => $request->subject_id,
 
-            'question' => $request->question,
+            'question'       => $request->question,
 
-            'option_a' => $request->option_a,
+            'option_a'       => $request->option_a,
 
-            'option_b' => $request->option_b,
+            'option_b'       => $request->option_b,
 
-            'option_c' => $request->option_c,
+            'option_c'       => $request->option_c,
 
-            'option_d' => $request->option_d,
+            'option_d'       => $request->option_d,
 
             'correct_answer' => strtoupper($request->correct_answer)
 
         ]);
 
-        return response()->json([
-
-            'success' => true,
-
-            'message' => 'Soal berhasil diperbarui',
-
-            'data' => $question
-
-        ]);
+        return redirect()->back()
+                         ->with('success', 'Soal berhasil diperbarui.');
     }
 
     /**
@@ -128,16 +142,15 @@ class QuestionController extends Controller
      */
     public function destroy($id)
     {
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
+
         $question = Question::findOrFail($id);
 
         $question->delete();
 
-        return response()->json([
-
-            'success' => true,
-
-            'message' => 'Soal berhasil dihapus'
-
-        ]);
+        return redirect()->back()
+                         ->with('success', 'Soal berhasil dihapus.');
     }
 }
